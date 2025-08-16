@@ -2,13 +2,10 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 
-  <!-- Index -->
   <url>
     <loc>https://nxt-token.pp.ua/</loc>
     <lastmod>2025-08-16</lastmod>
     <priority>1.0</priority>
-    
-    <!-- Photo / -->
     <image:image>
       <image:loc>https://nxt-token.pp.ua/ico.png</image:loc>
       <image:caption>NeXT blockchain logo</image:caption>
