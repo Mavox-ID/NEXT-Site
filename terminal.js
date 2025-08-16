@@ -1,4 +1,4 @@
-// Version on code: v15.08
+// Version on code: v15.09
 // Made for Google Search Console
 // Created by B-HDtm
 
@@ -105,14 +105,12 @@ useEffect(() => {
     animateProgressStage(0, 3000, () => setLoadingStage(2));
   } else if (loadingStage === 2) {
     const duration = 500 + Math.random() * 9500;
-    setTimeout(() => {
-      animateProgressStage(1, duration, () => setLoadingStage(3));
-    }, 50);
+    console.log(`Debug: second progress will take ${(duration/1000).toFixed(2)}s`);
+    animateProgressStage(1, duration, () => setLoadingStage(3));
   } else if (loadingStage === 3) {
     const duration = 500 + Math.random() * 9500;
-    setTimeout(() => {
-      animateProgressStage(2, duration, () => setLoadingStage(4));
-    }, 50);
+    console.log(`Debug: third progress will take ${(duration/1000).toFixed(2)}s`);
+    animateProgressStage(2, duration, () => setLoadingStage(4));
   } else if (loadingStage === 4) {
     setShowTerminal(true);
     setOutput([
