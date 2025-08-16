@@ -1,4 +1,4 @@
-// Version on code: v15.07
+// Version on code: v15.08
 // Made for Google Search Console
 // Created by B-HDtm
 
@@ -102,16 +102,17 @@ useEffect(() => {
     setOutput(["> start terminal.js"]);
     setTimeout(() => setLoadingStage(1), 500);
   } else if (loadingStage === 1) {
-    // s3
     animateProgressStage(0, 3000, () => setLoadingStage(2));
   } else if (loadingStage === 2) {
-    // R0.5/10
     const duration = 500 + Math.random() * 9500;
-    animateProgressStage(1, duration, () => setLoadingStage(3));
+    setTimeout(() => {
+      animateProgressStage(1, duration, () => setLoadingStage(3));
+    }, 50);
   } else if (loadingStage === 3) {
-    // R0.5/10
     const duration = 500 + Math.random() * 9500;
-    animateProgressStage(2, duration, () => setLoadingStage(4));
+    setTimeout(() => {
+      animateProgressStage(2, duration, () => setLoadingStage(4));
+    }, 50);
   } else if (loadingStage === 4) {
     setShowTerminal(true);
     setOutput([
