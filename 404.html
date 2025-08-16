@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - NeXT</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-green-500 font-mono flex flex-col items-center justify-center h-screen">
+  <h1 class="text-6xl mb-4">404</h1>
+  <p class="mb-6">Page not found</p>
+  
+  <button id="serverBtn" class="px-4 py-2 bg-green-700 rounded hover:bg-green-600">
+    Connect to Server
+  </button>
+
+  <!-- Terminal -->
+  <div id="terminal" class="hidden w-full max-w-2xl bg-black text-green-500 font-mono mt-6 p-4 border border-green-700 rounded h-64 overflow-y-auto"></div>
+
+  <script>
+    const btn = document.getElementById('serverBtn');
+    const term = document.getElementById('terminal');
+
+    btn.onclick = () => {
+      btn.classList.add("hidden");
+      term.classList.remove("hidden");
+
+      const lines = [
+        "Connecting to NeXT server...",
+        "Authorizing...",
+        "Running C++ modules...",
+        "Hasher.cpp -> OK",
+        "Hasher2.cpp -> OK",
+        "Running PHP scripts...",
+        "send.php -> OK",
+        "notify.php -> OK",
+        "Running Java programs...",
+        "Logger -> OK",
+        "Notifier -> OK",
+        "Running JS scripts...",
+        "Mining blocks...",
+        "Pipeline complete ✅",
+        "Redirecting..."
+      ];
+
+      let i = 0;
+      const interval = setInterval(() => {
+        term.innerHTML += lines[i] + "<br>";
+        term.scrollTop = term.scrollHeight;
+        i++;
+        if (i === lines.length) {
+          clearInterval(interval);
+          setTimeout(() => {
+            window.location.href = "https://nxt-token.pp.ua";
+          }, 1500);
+        }
+      }, 400);
+    };
+  </script>
+</body>
+</html>
