@@ -1,4 +1,4 @@
-// Version on code: v15.06
+// Version on code: v15.07
 // Made for Google Search Console
 // Created by B-HDtm
 
@@ -97,27 +97,32 @@ function BlockchainTerminal() {
     requestAnimationFrame(step);
   };
 
-  useEffect(() => {
-    if (loadingStage === 0) {
-      setOutput(["> start terminal.js"]);
-      setTimeout(() => setLoadingStage(1), 500);
-    } else if (loadingStage === 1) {
-      animateProgressStage(0, 2000, () => setLoadingStage(2));
-    } else if (loadingStage === 2) {
-      animateProgressStage(1, 2000, () => setLoadingStage(3));
-    } else if (loadingStage === 3) {
-      animateProgressStage(2, 2000, () => setLoadingStage(4));
-    } else if (loadingStage === 4) {
-      setShowTerminal(true);
-      setOutput([
-        'NeXT Online Terminal - Check the blockchain now',
-        'First, type the command "help"',
-        isMobile
-          ? 'Tap (Back) to stop a running process'
-          : 'Press Ctrl+C to stop a running process',
-      ]);
-    }
-  }, [loadingStage]);
+useEffect(() => {
+  if (loadingStage === 0) {
+    setOutput(["> start terminal.js"]);
+    setTimeout(() => setLoadingStage(1), 500);
+  } else if (loadingStage === 1) {
+    // s3
+    animateProgressStage(0, 3000, () => setLoadingStage(2));
+  } else if (loadingStage === 2) {
+    // R0.5/10
+    const duration = 500 + Math.random() * 9500;
+    animateProgressStage(1, duration, () => setLoadingStage(3));
+  } else if (loadingStage === 3) {
+    // R0.5/10
+    const duration = 500 + Math.random() * 9500;
+    animateProgressStage(2, duration, () => setLoadingStage(4));
+  } else if (loadingStage === 4) {
+    setShowTerminal(true);
+    setOutput([
+      'NeXT Online Terminal - Check the blockchain now',
+      'First, type the command "help"',
+      isMobile
+        ? 'Tap (Back) to stop a running process'
+        : 'Press Ctrl+C to stop a running process',
+    ]);
+  }
+}, [loadingStage]);
 
   const loadChain = () =>
     JSON.parse(localStorage.getItem('blockchain_json') || '[]');
