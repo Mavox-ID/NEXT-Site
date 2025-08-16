@@ -1,4 +1,4 @@
-// Version on code: v15.09
+// Version on code: v15.10
 // Made for Google Search Console
 // Created by B-HDtm
 
@@ -19,8 +19,23 @@ function BlockchainTerminal() {
   const [historyIndex, setHistoryIndex] = useState(-1);
 
   const [loadingStage, setLoadingStage] = useState(0);
-  const [progress, setProgress] = useState([0, 0, 0]); // три прогресс-бара
+  const [progress, setProgress] = useState([0, 0, 0]);
   const [showTerminal, setShowTerminal] = useState(false);
+
+  const [stageDurations] = useState(() => [
+    3000,
+    500 + Math.random() * 9500, // 2
+    500 + Math.random() * 9500, // 3
+  ]);
+
+  useEffect(() => {
+    console.log(
+      `Debug: second progress will take ${(stageDurations[1] / 1000).toFixed(2)}s`
+    );
+    console.log(
+      `Debug: third progress will take ${(stageDurations[2] / 1000).toFixed(2)}s`
+    );
+  }, []);
 
   useEffect(() => {
     terminalRef.current?.scrollTo(0, terminalRef.current.scrollHeight);
@@ -102,15 +117,11 @@ useEffect(() => {
     setOutput(["> start terminal.js"]);
     setTimeout(() => setLoadingStage(1), 500);
   } else if (loadingStage === 1) {
-    animateProgressStage(0, 3000, () => setLoadingStage(2));
+    animateProgressStage(0, stageDurations[0], () => setLoadingStage(2));
   } else if (loadingStage === 2) {
-    const duration = 500 + Math.random() * 9500;
-    console.log(`Debug: second progress will take ${(duration/1000).toFixed(2)}s`);
-    animateProgressStage(1, duration, () => setLoadingStage(3));
+    animateProgressStage(1, stageDurations[1], () => setLoadingStage(3));
   } else if (loadingStage === 3) {
-    const duration = 500 + Math.random() * 9500;
-    console.log(`Debug: third progress will take ${(duration/1000).toFixed(2)}s`);
-    animateProgressStage(2, duration, () => setLoadingStage(4));
+    animateProgressStage(2, stageDurations[2], () => setLoadingStage(4));
   } else if (loadingStage === 4) {
     setShowTerminal(true);
     setOutput([
