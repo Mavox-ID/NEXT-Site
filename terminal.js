@@ -1,4 +1,4 @@
-// Version on code: v15.05
+// Version on code: v15.06
 // Made for Google Search Console
 // Created by B-HDtm
 
@@ -7,13 +7,7 @@ const { useState, useEffect, useRef } = React;
 function BlockchainTerminal() {
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-  const [output, setOutput] = useState([
-    'NeXT Online Terminal - Check the blockchain now',
-    'First, type the command "help"',
-    isMobile
-      ? 'Tap (Back) to stop a running process'
-      : 'Press Ctrl+C to stop a running process',
-  ]);
+  const [output, setOutput] = useState(["> start terminal.js"]);
   const [command, setCommand] = useState('');
   const [blockchain, setBlockchain] = useState([]);
   const terminalRef = useRef(null);
@@ -23,8 +17,10 @@ function BlockchainTerminal() {
 
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+
   const [loadingStage, setLoadingStage] = useState(0);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState([0, 0, 0]); // три прогресс-бара
+  const [showTerminal, setShowTerminal] = useState(false);
 
   useEffect(() => {
     terminalRef.current?.scrollTo(0, terminalRef.current.scrollHeight);
@@ -85,13 +81,16 @@ function BlockchainTerminal() {
   const appendPre = (text) =>
     setOutput((prev) => [...prev, { pre: text }]);
 
-  const animateProgress = (duration, callback) => {
-    setProgress(0);
+  const animateProgressStage = (stageIndex, duration, callback) => {
     const start = performance.now();
     const step = (time) => {
       const elapsed = time - start;
       const pct = Math.min(100, (elapsed / duration) * 100);
-      setProgress(pct.toFixed(0));
+      setProgress((prev) => {
+        const newProgress = [...prev];
+        newProgress[stageIndex] = pct.toFixed(0);
+        return newProgress;
+      });
       if (pct < 100) requestAnimationFrame(step);
       else callback?.();
     };
@@ -101,13 +100,22 @@ function BlockchainTerminal() {
   useEffect(() => {
     if (loadingStage === 0) {
       setOutput(["> start terminal.js"]);
-      setTimeout(() => setLoadingStage(1), 1000);
+      setTimeout(() => setLoadingStage(1), 500);
     } else if (loadingStage === 1) {
-      animateProgress(3000, () => setLoadingStage(2));
+      animateProgressStage(0, 2000, () => setLoadingStage(2));
     } else if (loadingStage === 2) {
-      animateProgress(500 + Math.random() * 9500, () => setLoadingStage(3));
+      animateProgressStage(1, 2000, () => setLoadingStage(3));
     } else if (loadingStage === 3) {
-      animateProgress(500 + Math.random() * 9500, () => setLoadingStage(4));
+      animateProgressStage(2, 2000, () => setLoadingStage(4));
+    } else if (loadingStage === 4) {
+      setShowTerminal(true);
+      setOutput([
+        'NeXT Online Terminal - Check the blockchain now',
+        'First, type the command "help"',
+        isMobile
+          ? 'Tap (Back) to stop a running process'
+          : 'Press Ctrl+C to stop a running process',
+      ]);
     }
   }, [loadingStage]);
 
@@ -390,27 +398,26 @@ function BlockchainTerminal() {
     }
   };
 
-  return loadingStage < 4 ? (
+  return !showTerminal ? (
     <div className="w-screen h-screen bg-black text-green-500 font-mono p-4 flex flex-col justify-center items-center">
       {output.map((line, i) =>
         typeof line === 'string' ? (
-          <div key={i} className="whitespace-pre-wrap break-words">
-            {line}
-          </div>
+          <div key={i} className="whitespace-pre-wrap break-words">{line}</div>
         ) : (
-          <pre key={i} className="whitespace-pre-wrap break-words">
-            {line.pre}
-          </pre>
+          <pre key={i} className="whitespace-pre-wrap break-words">{line.pre}</pre>
         )
       )}
-      {loadingStage > 0 && (
-        <div className="mt-4 w-80 bg-green-900 h-4 relative">
-          <div
-            className="bg-green-500 h-4 transition-all duration-100"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      )}
+      <div className="mt-4 w-80 flex flex-col gap-2">
+        {progress.map((p, i) => (
+          <div key={i} className="w-full bg-green-900 h-4 relative">
+            <span className="absolute left-0 text-green-300 text-xs">{p}%</span>
+            <div
+              className="bg-green-500 h-4 transition-all duration-100"
+              style={{ width: `${p}%` }}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   ) : (
     <div
@@ -422,13 +429,9 @@ function BlockchainTerminal() {
     >
       {output.map((line, i) =>
         typeof line === 'string' ? (
-          <div key={i} className="whitespace-pre-wrap break-words">
-            {line}
-          </div>
+          <div key={i} className="whitespace-pre-wrap break-words">{line}</div>
         ) : (
-          <pre key={i} className="whitespace-pre-wrap break-words">
-            {line.pre}
-          </pre>
+          <pre key={i} className="whitespace-pre-wrap break-words">{line.pre}</pre>
         )
       )}
       <div className="mt-1 flex items-center gap-2">
@@ -442,7 +445,7 @@ function BlockchainTerminal() {
           onChange={(e) => setCommand(e.target.value)}
           onKeyDown={handleKeyDown}
           autoFocus
-          disabled={isMining || loadingStage < 4}
+          disabled={isMining || !showTerminal}
         />
       </div>
     </div>
