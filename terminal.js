@@ -1,3 +1,7 @@
+// Version on code: v15.05
+// Made for Google Search Console
+// Created by B-HDtm
+
 const { useState, useEffect, useRef } = React;
 
 function BlockchainTerminal() {
@@ -81,31 +85,31 @@ function BlockchainTerminal() {
   const appendPre = (text) =>
     setOutput((prev) => [...prev, { pre: text }]);
 
-const animateProgress = (duration, callback) => {
-  setProgress(0);
-  const start = performance.now();
-  const step = (time) => {
-    const elapsed = time - start;
-    const pct = Math.min(100, (elapsed / duration) * 100);
-    setProgress(pct.toFixed(0));
-    if (pct < 100) requestAnimationFrame(step);
-    else callback();
+  const animateProgress = (duration, callback) => {
+    setProgress(0);
+    const start = performance.now();
+    const step = (time) => {
+      const elapsed = time - start;
+      const pct = Math.min(100, (elapsed / duration) * 100);
+      setProgress(pct.toFixed(0));
+      if (pct < 100) requestAnimationFrame(step);
+      else callback?.();
+    };
+    requestAnimationFrame(step);
   };
-  requestAnimationFrame(step);
-};
 
-useEffect(() => {
-  if (loadingStage === 0) {
-    setOutput(["> start terminal.js"]);
-    setTimeout(() => setLoadingStage(1), 1000);
-  } else if (loadingStage === 1) {
-    animateProgress(3000, () => setLoadingStage(2));
-  } else if (loadingStage === 2) {
-    animateProgress(500 + Math.random() * 9500, () => setLoadingStage(3));
-  } else if (loadingStage === 3) {
-    animateProgress(500 + Math.random() * 9500, () => setLoadingStage(4));
-  }
-}, [loadingStage]);
+  useEffect(() => {
+    if (loadingStage === 0) {
+      setOutput(["> start terminal.js"]);
+      setTimeout(() => setLoadingStage(1), 1000);
+    } else if (loadingStage === 1) {
+      animateProgress(3000, () => setLoadingStage(2));
+    } else if (loadingStage === 2) {
+      animateProgress(500 + Math.random() * 9500, () => setLoadingStage(3));
+    } else if (loadingStage === 3) {
+      animateProgress(500 + Math.random() * 9500, () => setLoadingStage(4));
+    }
+  }, [loadingStage]);
 
   const loadChain = () =>
     JSON.parse(localStorage.getItem('blockchain_json') || '[]');
@@ -245,7 +249,7 @@ useEffect(() => {
 
           const barLength = window.innerWidth < 768 ? 30 : 70;
 
-          appendOutput(`Running blockchain (${times} runs)...`);
+          appendOutput(`Running blockchain (${times} times)...`);
           appendOutput('0% [' + '-'.repeat(barLength) + ']');
 
           for (let i = 0; i < times; i++) {
@@ -386,63 +390,64 @@ useEffect(() => {
     }
   };
 
-return loadingStage < 4 ? (
-  <div className="w-screen h-screen bg-black text-green-500 font-mono p-4 flex flex-col justify-center items-center">
-    {output.map((line, i) =>
-      typeof line === 'string' ? (
-        <div key={i} className="whitespace-pre-wrap break-words">
-          {line}
+  return loadingStage < 4 ? (
+    <div className="w-screen h-screen bg-black text-green-500 font-mono p-4 flex flex-col justify-center items-center">
+      {output.map((line, i) =>
+        typeof line === 'string' ? (
+          <div key={i} className="whitespace-pre-wrap break-words">
+            {line}
+          </div>
+        ) : (
+          <pre key={i} className="whitespace-pre-wrap break-words">
+            {line.pre}
+          </pre>
+        )
+      )}
+      {loadingStage > 0 && (
+        <div className="mt-4 w-80 bg-green-900 h-4 relative">
+          <div
+            className="bg-green-500 h-4 transition-all duration-100"
+            style={{ width: `${progress}%` }}
+          />
         </div>
-      ) : (
-        <pre key={i} className="whitespace-pre-wrap break-words">
-          {line.pre}
-        </pre>
-      )
-    )}
-    {loadingStage > 0 && (
-      <div className="mt-4 w-80 bg-green-900 h-4 relative">
-        <div
-          className="bg-green-500 h-4 transition-all duration-100"
-          style={{ width: `${progress}%` }}
+      )}
+    </div>
+  ) : (
+    <div
+      className={`w-screen h-screen bg-black text-green-500 font-mono p-4 overflow-y-auto select-text ${
+        isMobile ? 'text-sm' : ''
+      }`}
+      ref={terminalRef}
+      onClick={() => inputRef.current?.focus()}
+    >
+      {output.map((line, i) =>
+        typeof line === 'string' ? (
+          <div key={i} className="whitespace-pre-wrap break-words">
+            {line}
+          </div>
+        ) : (
+          <pre key={i} className="whitespace-pre-wrap break-words">
+            {line.pre}
+          </pre>
+        )
+      )}
+      <div className="mt-1 flex items-center gap-2">
+        <span>&gt;</span>
+        <input
+          ref={inputRef}
+          className={`bg-black text-green-500 outline-none ${
+            isMobile ? 'w-[95%] text-sm' : 'w-[80ch]'
+          }`}
+          value={command}
+          onChange={(e) => setCommand(e.target.value)}
+          onKeyDown={handleKeyDown}
+          autoFocus
+          disabled={isMining || loadingStage < 4}
         />
       </div>
-    )}
-  </div>
-) : (
-  <div
-    className={`w-screen h-screen bg-black text-green-500 font-mono p-4 overflow-y-auto select-text ${
-      isMobile ? 'text-sm' : ''
-    }`}
-    ref={terminalRef}
-    onClick={() => inputRef.current?.focus()}
-  >
-    {output.map((line, i) =>
-      typeof line === 'string' ? (
-        <div key={i} className="whitespace-pre-wrap break-words">
-          {line}
-        </div>
-      ) : (
-        <pre key={i} className="whitespace-pre-wrap break-words">
-          {line.pre}
-        </pre>
-      )
-    )}
-    <div className="mt-1 flex items-center gap-2">
-      <span>&gt;</span>
-      <input
-        ref={inputRef}
-        className={`bg-black text-green-500 outline-none ${
-          isMobile ? 'w-[95%] text-sm' : 'w-[80ch]'
-        }`}
-        value={command}
-        onChange={(e) => setCommand(e.target.value)}
-        onKeyDown={handleKeyDown}
-        autoFocus
-        disabled={isMining || loadingStage < 4}
-      />
     </div>
-  </div>
-);
+  );
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <BlockchainTerminal />
