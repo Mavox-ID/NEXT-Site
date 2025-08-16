@@ -13,6 +13,10 @@ function BlockchainTerminal() {
   const [isMining, setIsMining] = useState(false);
   const miningAbortRef = useRef(false);
 
+  // история команд
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
   useEffect(() => {
     terminalRef.current?.scrollTo(0, terminalRef.current.scrollHeight);
   }, [output]);
@@ -138,7 +142,18 @@ function BlockchainTerminal() {
           'block -delete     - delete blockchain.json\n' +
           'block -download   - download blockchain.json from server\n' +
           'info              - show blockchain stats\n' +
+          'ter               - about NeXT Online Terminal\n' +
           'clear             - clear screen'
+        );
+        break;
+      }
+      case 'ter': {
+        appendOutput(
+          "📖 NeXT Online Terminal\n" +
+          "This is an interactive terminal for working with an experimental blockchain model.\n" +
+          "You can execute commands (help, start, block, info) and see the result in real time.\n" +
+          "The idea of the terminal is to show the principles of blockchain and its verification in real time.\n\n" +
+          "ℹ️ For more information: https://github.com/B-HDtm/NeXT/blob/main/README.md"
         );
         break;
       }
@@ -183,15 +198,27 @@ function BlockchainTerminal() {
             appendOutput('Blockchain deleted successfully.');
           }
         } else if (args[1] === '-download') {
-          try {
-            const res = await fetch("https://nxt-token.pp.ua/blockchain.json", { method: "HEAD" });
-            if (res.ok) {
-              appendOutput("Download blockchain here: https://nxt-token.pp.ua/blockchain.json");
-            } else {
-              appendOutput("Error: blockchain.json does not exist on server. Run start to create it.");
-            }
-          } catch (e) {
-            appendOutput("Error: blockchain.json not reachable.");
+          const raw = localStorage.getItem('blockchain_json');
+          if (!raw) {
+            appendOutput('Error: blockchain.json does not exist. Run start to create it.');
+          } else {
+            appendOutput('Checking blockchain data...');
+            await new Promise(r => setTimeout(r, 500));
+            appendOutput('Initializing export module...');
+            await new Promise(r => setTimeout(r, 500));
+            appendOutput('Packaging blockchain.json...');
+            await new Promise(r => setTimeout(r, 500));
+            appendOutput('✅ Blockchain ready. Download will start shortly...');
+
+            const blob = new Blob([raw], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "blockchain.json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
           }
         } else {
           const raw = localStorage.getItem('blockchain_json');
@@ -220,7 +247,7 @@ function BlockchainTerminal() {
         break;
       }
       default: {
-        if (main) appendOutput(`Unknown command: ${main}`);
+        if (main) appendOutput(`Unknown command: ${main} try "help"`);
       }
     }
   };
@@ -232,8 +259,31 @@ function BlockchainTerminal() {
     }
     if (e.key === 'Enter') {
       appendOutput(`> ${command}`);
+      if (command.trim()) {
+        setHistory((prev) => [...prev, command]);
+        setHistoryIndex(-1);
+      }
       runCommand(command);
       setCommand('');
+    } else if (e.key === 'ArrowUp') {
+      if (history.length > 0) {
+        const newIndex = historyIndex === -1 ? history.length - 1 : Math.max(0, historyIndex - 1);
+        setHistoryIndex(newIndex);
+        setCommand(history[newIndex]);
+      }
+      e.preventDefault();
+    } else if (e.key === 'ArrowDown') {
+      if (historyIndex !== -1) {
+        const newIndex = historyIndex + 1;
+        if (newIndex < history.length) {
+          setHistoryIndex(newIndex);
+          setCommand(history[newIndex]);
+        } else {
+          setHistoryIndex(-1);
+          setCommand('');
+        }
+      }
+      e.preventDefault();
     }
   };
 
