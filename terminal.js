@@ -26,19 +26,6 @@ function BlockchainTerminal() {
     terminalRef.current?.scrollTo(0, terminalRef.current.scrollHeight);
   }, [output]);
 
-useEffect(() => {
-  if (loadingStage === 0) {
-    setOutput(["> start terminal.js"]);
-    setTimeout(() => setLoadingStage(1), 1000);
-  } else if (loadingStage === 1) {
-    animateProgress(3000, () => setLoadingStage(2));
-  } else if (loadingStage === 2) {
-    animateProgress(500 + Math.random() * 9500, () => setLoadingStage(3));
-  } else if (loadingStage === 3) {
-    animateProgress(500 + Math.random() * 9500, () => setLoadingStage(4));
-  }
-}, [loadingStage]);
-
   useEffect(() => {
     const saved = localStorage.getItem('blockchain_json');
     if (saved) setBlockchain(JSON.parse(saved));
@@ -106,6 +93,19 @@ const animateProgress = (duration, callback) => {
   };
   requestAnimationFrame(step);
 };
+
+useEffect(() => {
+  if (loadingStage === 0) {
+    setOutput(["> start terminal.js"]);
+    setTimeout(() => setLoadingStage(1), 1000);
+  } else if (loadingStage === 1) {
+    animateProgress(3000, () => setLoadingStage(2));
+  } else if (loadingStage === 2) {
+    animateProgress(500 + Math.random() * 9500, () => setLoadingStage(3));
+  } else if (loadingStage === 3) {
+    animateProgress(500 + Math.random() * 9500, () => setLoadingStage(4));
+  }
+}, [loadingStage]);
 
   const loadChain = () =>
     JSON.parse(localStorage.getItem('blockchain_json') || '[]');
