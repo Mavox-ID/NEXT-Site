@@ -314,7 +314,7 @@ function BlockchainTerminal() {
         break;
       }
       default: {
-        if (main) appendOutput(`Unknown command: ${main} try "help"`);
+        if (main) appendOutput(`Unknown command: ${main}, try "help"`);
       }
     }
   };
