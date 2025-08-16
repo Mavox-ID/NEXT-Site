@@ -19,10 +19,25 @@ function BlockchainTerminal() {
 
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [loadingStage, setLoadingStage] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     terminalRef.current?.scrollTo(0, terminalRef.current.scrollHeight);
   }, [output]);
+
+useEffect(() => {
+  if (loadingStage === 0) {
+    setOutput(["> start terminal.js"]);
+    setTimeout(() => setLoadingStage(1), 1000);
+  } else if (loadingStage === 1) {
+    animateProgress(3000, () => setLoadingStage(2));
+  } else if (loadingStage === 2) {
+    animateProgress(500 + Math.random() * 9500, () => setLoadingStage(3));
+  } else if (loadingStage === 3) {
+    animateProgress(500 + Math.random() * 9500, () => setLoadingStage(4));
+  }
+}, [loadingStage]);
 
   useEffect(() => {
     const saved = localStorage.getItem('blockchain_json');
@@ -78,6 +93,19 @@ function BlockchainTerminal() {
 
   const appendPre = (text) =>
     setOutput((prev) => [...prev, { pre: text }]);
+
+const animateProgress = (duration, callback) => {
+  setProgress(0);
+  const start = performance.now();
+  const step = (time) => {
+    const elapsed = time - start;
+    const pct = Math.min(100, (elapsed / duration) * 100);
+    setProgress(pct.toFixed(0));
+    if (pct < 100) requestAnimationFrame(step);
+    else callback();
+  };
+  requestAnimationFrame(step);
+};
 
   const loadChain = () =>
     JSON.parse(localStorage.getItem('blockchain_json') || '[]');
@@ -358,42 +386,63 @@ function BlockchainTerminal() {
     }
   };
 
-  return (
-    <div
-      className={`w-screen h-screen bg-black text-green-500 font-mono p-4 overflow-y-auto select-text ${
-        isMobile ? 'text-sm' : ''
-      }`}
-      ref={terminalRef}
-      onClick={() => inputRef.current?.focus()}
-    >
-      {output.map((line, i) =>
-        typeof line === 'string' ? (
-          <div key={i} className="whitespace-pre-wrap break-words">
-            {line}
-          </div>
-        ) : (
-          <pre key={i} className="whitespace-pre-wrap break-words">
-            {line.pre}
-          </pre>
-        )
-      )}
-      <div className="mt-1 flex items-center gap-2">
-        <span>&gt;</span>
-        <input
-          ref={inputRef}
-          className={`bg-black text-green-500 outline-none ${
-            isMobile ? 'w-[95%] text-sm' : 'w-[80ch]'
-          }`}
-          value={command}
-          onChange={(e) => setCommand(e.target.value)}
-          onKeyDown={handleKeyDown}
-          autoFocus
-          disabled={isMining}
+return loadingStage < 4 ? (
+  <div className="w-screen h-screen bg-black text-green-500 font-mono p-4 flex flex-col justify-center items-center">
+    {output.map((line, i) =>
+      typeof line === 'string' ? (
+        <div key={i} className="whitespace-pre-wrap break-words">
+          {line}
+        </div>
+      ) : (
+        <pre key={i} className="whitespace-pre-wrap break-words">
+          {line.pre}
+        </pre>
+      )
+    )}
+    {loadingStage > 0 && (
+      <div className="mt-4 w-80 bg-green-900 h-4 relative">
+        <div
+          className="bg-green-500 h-4 transition-all duration-100"
+          style={{ width: `${progress}%` }}
         />
       </div>
+    )}
+  </div>
+) : (
+  <div
+    className={`w-screen h-screen bg-black text-green-500 font-mono p-4 overflow-y-auto select-text ${
+      isMobile ? 'text-sm' : ''
+    }`}
+    ref={terminalRef}
+    onClick={() => inputRef.current?.focus()}
+  >
+    {output.map((line, i) =>
+      typeof line === 'string' ? (
+        <div key={i} className="whitespace-pre-wrap break-words">
+          {line}
+        </div>
+      ) : (
+        <pre key={i} className="whitespace-pre-wrap break-words">
+          {line.pre}
+        </pre>
+      )
+    )}
+    <div className="mt-1 flex items-center gap-2">
+      <span>&gt;</span>
+      <input
+        ref={inputRef}
+        className={`bg-black text-green-500 outline-none ${
+          isMobile ? 'w-[95%] text-sm' : 'w-[80ch]'
+        }`}
+        value={command}
+        onChange={(e) => setCommand(e.target.value)}
+        onKeyDown={handleKeyDown}
+        autoFocus
+        disabled={isMining || loadingStage < 4}
+      />
     </div>
-  );
-}
+  </div>
+);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <BlockchainTerminal />
