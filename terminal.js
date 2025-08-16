@@ -1,10 +1,14 @@
 const { useState, useEffect, useRef } = React;
 
 function BlockchainTerminal() {
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   const [output, setOutput] = useState([
     'NeXT Online Terminal - Check the blockchain now',
     'First, type the command "help"',
-    'Press Ctrl+C to stop a running process'
+    isMobile
+      ? 'Tap (Back) to stop a running process'
+      : 'Press Ctrl+C to stop a running process',
   ]);
   const [command, setCommand] = useState('');
   const [blockchain, setBlockchain] = useState([]);
@@ -13,7 +17,6 @@ function BlockchainTerminal() {
   const [isMining, setIsMining] = useState(false);
   const miningAbortRef = useRef(false);
 
-  // история команд
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
@@ -39,7 +42,25 @@ function BlockchainTerminal() {
         }
       }
     };
+
     document.addEventListener('keydown', handleCtrlC);
+
+    if (isMobile) {
+      let touchStartX = 0;
+      document.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+      });
+      document.addEventListener('touchend', (e) => {
+        const touchEndX = e.changedTouches[0].clientX;
+        if (Math.abs(touchEndX - touchStartX) > 80) {
+          if (isMining) {
+            miningAbortRef.current = true;
+            setIsMining(false);
+            setOutput((prev) => [...prev, '\n⛔ Mining aborted (Back gesture).']);
+          }
+        }
+      });
+    }
 
     return () => {
       document.removeEventListener('mousedown', focusInput);
@@ -50,11 +71,17 @@ function BlockchainTerminal() {
   }, [isMining]);
 
   const appendOutput = (line, replaceLast = false) => {
-    setOutput((prev) => replaceLast ? [...prev.slice(0, -1), line] : [...prev, line]);
+    setOutput((prev) =>
+      replaceLast ? [...prev.slice(0, -1), line] : [...prev, line]
+    );
   };
-  const appendPre = (text) => setOutput((prev) => [...prev, { pre: text }]);
 
-  const loadChain = () => JSON.parse(localStorage.getItem('blockchain_json') || '[]');
+  const appendPre = (text) =>
+    setOutput((prev) => [...prev, { pre: text }]);
+
+  const loadChain = () =>
+    JSON.parse(localStorage.getItem('blockchain_json') || '[]');
+
   const saveChain = (chain) => {
     localStorage.setItem('blockchain_json', JSON.stringify(chain, null, 2));
     setBlockchain(chain);
@@ -63,18 +90,24 @@ function BlockchainTerminal() {
   const sha256 = async (message) => {
     const msgBuffer = new TextEncoder().encode(message);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('');
+    return Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
   };
 
   const mineBlock = async (index, data, previousHash, difficulty = 2) => {
     let nonce = 0;
     let timestamp = new Date().toISOString();
-    let hash = await sha256(index + previousHash + timestamp + JSON.stringify(data) + nonce);
+    let hash = await sha256(
+      index + previousHash + timestamp + JSON.stringify(data) + nonce
+    );
     const target = '0'.repeat(difficulty);
     while (hash.substring(0, difficulty) !== target) {
       if (miningAbortRef.current) return null;
       nonce++;
-      hash = await sha256(index + previousHash + timestamp + JSON.stringify(data) + nonce);
+      hash = await sha256(
+        index + previousHash + timestamp + JSON.stringify(data) + nonce
+      );
     }
     return { index, timestamp, data, previousHash, hash, nonce };
   };
@@ -84,10 +117,21 @@ function BlockchainTerminal() {
 
     const add = async (lang, file, amount) => {
       const previousHash = chain.length ? chain[chain.length - 1].hash : '0';
-      const blk = await mineBlock(chain.length, { lang, file, amount }, previousHash);
+      const blk = await mineBlock(
+        chain.length,
+        { lang, file, amount },
+        previousHash
+      );
       if (!blk) return;
       chain.push(blk);
-      if (!silent) appendOutput(`NXT ⥉ ${lang.toUpperCase()} ${file || 'Script'}: Block ${blk.index} mined: ${blk.hash}${amount !== undefined ? ` | Amount: ${amount}` : ''}`);
+      if (!silent)
+        appendOutput(
+          `NXT ⥉ ${lang.toUpperCase()} ${file || 'Script'}: Block ${
+            blk.index
+          } mined: ${blk.hash}${
+            amount !== undefined ? ` | Amount: ${amount}` : ''
+          }`
+        );
       return blk;
     };
 
@@ -95,12 +139,15 @@ function BlockchainTerminal() {
       appendOutput('=== Running C++ programs ===');
       await add('C++', 'Hasher.cpp', 100);
       await add('C++', 'Hasher2.cpp', 150);
+
       appendOutput('=== Running PHP scripts ===');
       await add('PHP', 'send.php', 300);
       await add('PHP', 'notify.php', 367);
+
       appendOutput('=== Running Java programs ===');
       await add('Java', 'Logger', 200);
       await add('Java', 'Notifier', 500);
+
       appendOutput('=== Running JS scripts ===');
       await add('JS', null, 0);
       await add('JS', null, 0);
@@ -124,7 +171,8 @@ function BlockchainTerminal() {
     }
 
     saveChain(chain);
-    if (!silent) appendOutput('✅ Blockchain updated and saved to block/blockchain.json');
+    if (!silent)
+      appendOutput('✅ Blockchain updated and saved to block/blockchain.json');
   };
 
   const runCommand = async (cmd) => {
@@ -135,25 +183,25 @@ function BlockchainTerminal() {
       case 'help': {
         appendOutput(
           'Commands:\n' +
-          'help              - show this help\n' +
-          'start             - run blockchain pipeline\n' +
-          'start -m N        - run blockchain pipeline N times (progress bar)\n' +
-          'block             - print blockchain.json (pretty)\n' +
-          'block -delete     - delete blockchain.json\n' +
-          'block -download   - download blockchain.json from server\n' +
-          'info              - show blockchain stats\n' +
-          'ter               - about NeXT Online Terminal\n' +
-          'clear             - clear screen'
+            'help - show this help\n' +
+            'start - run blockchain pipeline\n' +
+            'start -m N - run blockchain pipeline N times (progress bar)\n' +
+            'block - print blockchain.json (pretty)\n' +
+            'block -delete - delete blockchain.json\n' +
+            'block -download - download blockchain.json from server\n' +
+            'info - show blockchain stats\n' +
+            'ter - about NeXT Online Terminal\n' +
+            'clear - clear screen'
         );
         break;
       }
       case 'ter': {
         appendOutput(
-          "📖 NeXT Online Terminal\n" +
-          "This is an interactive terminal for working with an experimental blockchain model.\n" +
-          "You can execute commands (help, start, block, info) and see the result in real time.\n" +
-          "The idea of the terminal is to show the principles of blockchain and its verification in real time.\n\n" +
-          "ℹ️ For more information: https://github.com/B-HDtm/NeXT/blob/main/README.md"
+          "NeXT Online Terminal\n" +
+            "This is an interactive terminal for working with an experimental blockchain model.\n" +
+            "You can execute commands (help, start, block, info) and see the result in real time.\n" +
+            "The idea of the terminal is to show the principles of blockchain and its verification in real time.\n\n" +
+            "ℹ For more information: https://github.com/B-HDtm/NeXT/blob/main/README.md"
         );
         break;
       }
@@ -166,22 +214,30 @@ function BlockchainTerminal() {
           const times = parseInt(args[2]);
           setIsMining(true);
           miningAbortRef.current = false;
+
+          const barLength = window.innerWidth < 768 ? 30 : 70;
+
           appendOutput(`Running blockchain (${times} runs)...`);
-          appendOutput('0% [' + '-'.repeat(70) + ']');
+          appendOutput('0% [' + '-'.repeat(barLength) + ']');
+
           for (let i = 0; i < times; i++) {
             if (miningAbortRef.current) break;
             await runPipeline(true);
+
             const percent = Math.floor(((i + 1) / times) * 100);
-            const filledCount = Math.floor((percent / 100) * 70);
+            const filledCount = Math.floor((percent / 100) * barLength);
             const filled = '='.repeat(filledCount);
-            const empty = '-'.repeat(70 - filledCount);
+            const empty = '-'.repeat(barLength - filledCount);
+
             appendOutput(`${percent}% [${filled}${empty}]`, true);
           }
+
           if (!miningAbortRef.current) {
             appendOutput('✅ All runs completed.');
           } else {
             appendOutput('\n⛔ Mining aborted by user.');
           }
+
           setIsMining(false);
         } else {
           await runPipeline(false);
@@ -191,7 +247,9 @@ function BlockchainTerminal() {
       case 'block': {
         if (args[1] === '-delete') {
           if (!localStorage.getItem('blockchain_json')) {
-            appendOutput('Error: blockchain.json does not exist. Run start to create it.');
+            appendOutput(
+              'Error: blockchain.json does not exist. Run start to create it.'
+            );
           } else {
             localStorage.removeItem('blockchain_json');
             setBlockchain([]);
@@ -200,21 +258,23 @@ function BlockchainTerminal() {
         } else if (args[1] === '-download') {
           const raw = localStorage.getItem('blockchain_json');
           if (!raw) {
-            appendOutput('Error: blockchain.json does not exist. Run start to create it.');
+            appendOutput(
+              'Error: blockchain.json does not exist. Run start to create it.'
+            );
           } else {
             appendOutput('Checking blockchain data...');
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise((r) => setTimeout(r, 500));
             appendOutput('Initializing export module...');
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise((r) => setTimeout(r, 500));
             appendOutput('Packaging blockchain.json...');
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise((r) => setTimeout(r, 500));
             appendOutput('✅ Blockchain ready. Download will start shortly...');
 
-            const blob = new Blob([raw], { type: "application/json" });
+            const blob = new Blob([raw], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
+            const a = document.createElement('a');
             a.href = url;
-            a.download = "blockchain.json";
+            a.download = 'blockchain.json';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -223,7 +283,9 @@ function BlockchainTerminal() {
         } else {
           const raw = localStorage.getItem('blockchain_json');
           if (!raw) {
-            appendOutput('Error: blockchain.json does not exist. Run start to create it.');
+            appendOutput(
+              'Error: blockchain.json does not exist. Run start to create it.'
+            );
           } else {
             appendPre(JSON.stringify(JSON.parse(raw), null, 2));
           }
@@ -233,16 +295,21 @@ function BlockchainTerminal() {
       case 'info': {
         const chain = loadChain();
         if (chain.length === 0) {
-          appendOutput('Error: blockchain.json does not exist. Run start to create it.');
+          appendOutput(
+            'Error: blockchain.json does not exist. Run start to create it.'
+          );
         } else {
           const last = chain[chain.length - 1];
-          const totalAmount = chain.reduce((s, b) => s + (typeof b.data?.amount === 'number' ? b.data.amount : 0), 0);
+          const totalAmount = chain.reduce(
+            (s, b) => s + (typeof b.data?.amount === 'number' ? b.data.amount : 0),
+            0
+          );
           appendOutput('Blockchain info:');
           appendOutput(`Blocks: ${chain.length}`);
           appendOutput(`Latest index: ${last.index}`);
           appendOutput(`Latest hash: ${last.hash}`);
           appendOutput(`Total amount: ${totalAmount} ⥉`);
-          appendOutput(`Storage key: blockchain_json`);
+          appendOutput('Storage key: blockchain_json');
         }
         break;
       }
@@ -257,6 +324,7 @@ function BlockchainTerminal() {
       e.preventDefault();
       return;
     }
+
     if (e.key === 'Enter') {
       appendOutput(`> ${command}`);
       if (command.trim()) {
@@ -267,7 +335,10 @@ function BlockchainTerminal() {
       setCommand('');
     } else if (e.key === 'ArrowUp') {
       if (history.length > 0) {
-        const newIndex = historyIndex === -1 ? history.length - 1 : Math.max(0, historyIndex - 1);
+        const newIndex =
+          historyIndex === -1
+            ? history.length - 1
+            : Math.max(0, historyIndex - 1);
         setHistoryIndex(newIndex);
         setCommand(history[newIndex]);
       }
@@ -289,22 +360,30 @@ function BlockchainTerminal() {
 
   return (
     <div
-      className="w-screen h-screen bg-black text-green-500 font-mono p-4 overflow-y-auto select-text"
+      className={`w-screen h-screen bg-black text-green-500 font-mono p-4 overflow-y-auto select-text ${
+        isMobile ? 'text-sm' : ''
+      }`}
       ref={terminalRef}
       onClick={() => inputRef.current?.focus()}
     >
-      {output.map((line, i) => (
+      {output.map((line, i) =>
         typeof line === 'string' ? (
-          <div key={i} className="whitespace-pre-wrap break-words">{line}</div>
+          <div key={i} className="whitespace-pre-wrap break-words">
+            {line}
+          </div>
         ) : (
-          <pre key={i} className="whitespace-pre-wrap break-words">{line.pre}</pre>
+          <pre key={i} className="whitespace-pre-wrap break-words">
+            {line.pre}
+          </pre>
         )
-      ))}
+      )}
       <div className="mt-1 flex items-center gap-2">
         <span>&gt;</span>
         <input
           ref={inputRef}
-          className="bg-black text-green-500 outline-none w-[80ch]"
+          className={`bg-black text-green-500 outline-none ${
+            isMobile ? 'w-[95%] text-sm' : 'w-[80ch]'
+          }`}
           value={command}
           onChange={(e) => setCommand(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -316,4 +395,6 @@ function BlockchainTerminal() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<BlockchainTerminal />);
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <BlockchainTerminal />
+);
