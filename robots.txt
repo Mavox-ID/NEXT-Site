@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /terminal.js
+
+Sitemap: https://nxt-token.pp.ua/sitemap.xml
